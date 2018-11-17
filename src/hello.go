@@ -1,9 +1,12 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -13,6 +16,7 @@ func main() {
 	// frutas[1] = "Laranja"
 	// frutas[2] = "Morango"
 	// fmt.Println(time.Duration(3))
+	// fmt.Println0(readFile("sites.txt"))
 	Monitorising()
 }
 
@@ -24,21 +28,21 @@ func Monitorising() {
 		case 1:
 			initializeMonitoring()
 		case 2:
-			fmt.Println("Exibindo Log...")
+			fmt.Println("Showing Log...")
 		case 0:
-			fmt.Println("Saindo...")
+			fmt.Println("Exiting...")
 			os.Exit(0)
 		default:
-			fmt.Println(comand, "Não é uma opção valida!")
+			fmt.Println(comand, "It's NOT a valid option!")
 			os.Exit(-1)
 		}
 	}
 }
 
 func showMenu() {
-	fmt.Println("1- Inicar Monitoramento")
-	fmt.Println("2- Exibir Logs")
-	fmt.Println("0- Sair")
+	fmt.Println("1- Start Monitoring")
+	fmt.Println("2- Show Logs")
+	fmt.Println("0- Exit")
 }
 
 func catComand() int {
@@ -49,7 +53,7 @@ func catComand() int {
 }
 
 func initializeMonitoring() {
-	sites := []string{"http://serene-meadow-32620.herokuapp.com/api/notes", "http://www.catho.com.br", "http://www.alura.com.br"}
+	// sites := []string{"http://serene-meadow-32620.herokuapp.com/api/notes", "http://www.catho.com.br", "http://www.alura.com.br"}
 
 	fmt.Println("Before begin chose each type of monitoring must be executed!")
 	fmt.Println("1- Default Monitoring(Only one time each application)")
@@ -59,11 +63,11 @@ func initializeMonitoring() {
 
 	switch comand {
 	case 1:
-		Monitor(sites)
+		Monitor(readFile("sites.txt"))
 	case 2:
-		CustomizedMonitor(configMonitoring(), sites)
+		CustomizedMonitor(configMonitoring(), readFile("sites.txt"))
 	default:
-		fmt.Println(comand, "Não é uma opção valida!")
+		fmt.Println(comand, "It's NOT a valid option!")
 		os.Exit(-1)
 	}
 
@@ -71,7 +75,7 @@ func initializeMonitoring() {
 
 func configMonitoring() int {
 
-	fmt.Println("Digite de quanto em quanto tempo(segundos) você deseja monitorar as aplicações")
+	fmt.Println("Enter the time interval you want to monitor as apps")
 	times := catComand()
 	return times
 
@@ -79,10 +83,12 @@ func configMonitoring() int {
 
 func CustomizedMonitor(interval int, sites []string) {
 
-	fmt.Println("Iniciando Monitoramento...")
+	fmt.Println("Starting Monitoring...")
 	for {
 		for _, site := range sites {
-			response, _ := http.Get(site)
+			response, err := http.Get(site)
+
+			catError(err)
 
 			if response.StatusCode == 200 {
 				fmt.Println("Application on", site, "is UP and RUNING!!!!!")
@@ -95,9 +101,11 @@ func CustomizedMonitor(interval int, sites []string) {
 }
 
 func Monitor(sites []string) {
-	fmt.Println("Iniciando Monitoramento...")
+	fmt.Println("Starting Monitoring...")
 	for _, site := range sites {
-		response, _ := http.Get(site)
+		response, err := http.Get(site)
+
+		catError(err)
 
 		if response.StatusCode == 200 {
 			fmt.Println("Application on", site, "is UP and RUNING!!!!!")
@@ -105,4 +113,37 @@ func Monitor(sites []string) {
 			fmt.Println("ERROR on, ", site, "Something went Wrong!!!")
 		}
 	}
+}
+
+func catError(err error) {
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	return
+}
+
+func readFile(file string) []string {
+	var sites []string
+
+	response, err := os.Open(file)
+	catError(err)
+
+	reader := bufio.NewReader(response)
+
+	for {
+		linha, err := reader.ReadString('\n')
+
+		if err == io.EOF {
+			break
+		}
+
+		linha = strings.TrimSpace(linha)
+
+		sites = append(sites, linha)
+	}
+
+	response.Close()
+
+	return sites
 }
