@@ -13,14 +13,13 @@ func main() {
 	// frutas[1] = "Laranja"
 	// frutas[2] = "Morango"
 	// fmt.Println(time.Duration(3))
-
-	lpoMonitori()
+	Monitorising()
 }
 
-func lpoMonitori() {
+func Monitorising() {
 	for {
 		showMenu()
-		comand := showComand()
+		comand := catComand()
 		switch comand {
 		case 1:
 			initializeMonitoring()
@@ -42,7 +41,7 @@ func showMenu() {
 	fmt.Println("0- Sair")
 }
 
-func showComand() int {
+func catComand() int {
 	var selected int
 	fmt.Scan(&selected)
 
@@ -56,13 +55,13 @@ func initializeMonitoring() {
 	fmt.Println("1- Default Monitoring(Only one time each application)")
 	fmt.Println("2- Configure Monitoring")
 
-	comand := showComand()
+	comand := catComand()
 
 	switch comand {
 	case 1:
 		Monitor(sites)
 	case 2:
-		CustomizedMonitor(30, sites)
+		CustomizedMonitor(configMonitoring(), sites)
 	default:
 		fmt.Println(comand, "Não é uma opção valida!")
 		os.Exit(-1)
@@ -72,14 +71,13 @@ func initializeMonitoring() {
 
 func configMonitoring() int {
 
-	fmt.Println("Digite quantos em quanto tempo(segundos) voçe deseja monitorar as aplicações")
-	times := showComand()
+	fmt.Println("Digite de quanto em quanto tempo(segundos) você deseja monitorar as aplicações")
+	times := catComand()
 	return times
 
 }
 
 func CustomizedMonitor(interval int, sites []string) {
-	configMonitoring()
 
 	fmt.Println("Iniciando Monitoramento...")
 	for {
@@ -92,7 +90,7 @@ func CustomizedMonitor(interval int, sites []string) {
 				fmt.Println("ERROR on, ", site, "Something went Wrong!!!")
 			}
 		}
-		time.Sleep(time.Duration(interval))
+		time.Sleep(time.Duration(interval) * time.Second)
 	}
 }
 
