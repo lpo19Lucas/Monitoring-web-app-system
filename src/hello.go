@@ -4,8 +4,10 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -22,7 +24,7 @@ func Monitorising() {
 		case 1:
 			initializeMonitoring()
 		case 2:
-			fmt.Println("Showing Log...")
+			showLogs()
 		case 0:
 			fmt.Println("Exiting...")
 			os.Exit(0)
@@ -55,9 +57,9 @@ func initializeMonitoring() {
 
 	switch comand {
 	case 1:
-		Monitor(readFile("sites.txt"))
+		Monitor(readFileReturnsArray("sites.txt"))
 	case 2:
-		CustomizedMonitor(config(), readFile("sites.txt"))
+		CustomizedMonitor(config(), readFileReturnsArray("sites.txt"))
 	default:
 		fmt.Println(comand, "It's NOT a valid option!")
 		os.Exit(-1)
@@ -93,13 +95,18 @@ func Monitor(urls []string) {
 	fmt.Println("Starting Monitoring...")
 
 	for _, url := range urls {
+		var status bool
 		response, err := http.Get(url)
 		catError(err)
 
 		if response.StatusCode == 200 {
 			fmt.Println("Application on", url, "is UP and RUNING!!!!!")
+			status = true
+			writeFile("log.txt", url, status, err)
 		} else {
 			fmt.Println("ERROR on, ", url, "Something went Wrong!!!")
+			status = false
+			writeFile("log.txt", url, status, err)
 		}
 	}
 }
@@ -108,17 +115,15 @@ func catError(err error) {
 	if err != nil {
 		fmt.Println(err)
 	}
-
-	return
 }
 
-func readFile(file string) []string {
+func readFileReturnsArray(fileName string) []string {
 	var urls []string
 
-	response, err := os.Open(file)
+	file, err := os.Open(fileName)
 	catError(err)
 
-	reader := bufio.NewReader(response)
+	reader := bufio.NewReader(file)
 
 	for {
 		line, err := reader.ReadString('\n')
@@ -130,7 +135,28 @@ func readFile(file string) []string {
 		line = strings.TrimSpace(line)
 		urls = append(urls, line)
 	}
-	response.Close()
+	file.Close()
 
 	return urls
+}
+
+func readFile(fileName string) {
+	file, err := ioutil.ReadFile(fileName)
+	catError(err)
+
+	fmt.Println(string(file))
+}
+
+func writeFile(fileName string, url string, status bool, err error) {
+	file, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	catError(err)
+
+	file.WriteString("URL ==> " + url + ", active => " + strconv.FormatBool(status) + ", at => " + time.Now().Format("02/01/2006 15:04:05") + "\n")
+
+	file.Close()
+}
+
+func showLogs() {
+	fmt.Println("Showing Log...")
+	readFile("log.txt")
 }
