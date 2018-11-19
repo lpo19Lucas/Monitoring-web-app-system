@@ -19,7 +19,7 @@ func main() {
 func Monitorising() {
 	for {
 		showMenu()
-		comand := catComand()
+		comand := catchComand()
 		switch comand {
 		case 1:
 			initializeMonitoring()
@@ -41,7 +41,7 @@ func showMenu() {
 	fmt.Println("0- Exit")
 }
 
-func catComand() int {
+func catchComand() int {
 	var selected int
 	fmt.Scan(&selected)
 
@@ -53,38 +53,49 @@ func initializeMonitoring() {
 	fmt.Println("1- Default Monitoring(Only one time each application)")
 	fmt.Println("2- Configure Monitoring")
 
-	comand := catComand()
+	comand := catchComand()
 
 	switch comand {
 	case 1:
 		Monitor(readFileReturnsArray("sites.txt"))
 	case 2:
-		CustomizedMonitor(config(), readFileReturnsArray("sites.txt"))
+		CustomizedMonitor(conf1(), conf2(), readFileReturnsArray("sites.txt"))
 	default:
 		fmt.Println(comand, "It's NOT a valid option!")
 		os.Exit(-1)
 	}
 }
 
-func config() int {
-	fmt.Println("Enter the time-out value(seconds) you want to monitor as apps")
-	time := catComand()
+func conf1() int {
+	fmt.Println("How many times do you want to monitor as apps")
+	monitoringTimes := catchComand()
 
-	return time
+	return monitoringTimes
 }
 
-func CustomizedMonitor(timeOut int, urls []string) {
+func conf2() int {
+	fmt.Println("Enter the time-out value(seconds) you want to monitor your apps")
+	timeOut := catchComand()
+
+	return timeOut
+}
+
+func CustomizedMonitor(monitorTimes int, timeOut int, urls []string) {
 	fmt.Println("Starting Monitoring...")
 
-	for {
+	for i := 0; i < monitorTimes; i++ {
 		for _, url := range urls {
 			response, err := http.Get(url)
-			catError(err)
+			catchError(err)
 
 			if response.StatusCode == 200 {
 				fmt.Println("Application on", url, "is UP and RUNING!!!!!")
+				writeLog(url, response.StatusCode, err)
+
 			} else {
 				fmt.Println("ERROR on, ", url, "Something went Wrong!!!")
+				writeLog(url, response.StatusCode, err)
+
 			}
 		}
 		time.Sleep(time.Duration(timeOut) * time.Second)
@@ -95,23 +106,22 @@ func Monitor(urls []string) {
 	fmt.Println("Starting Monitoring...")
 
 	for _, url := range urls {
-		var status bool
 		response, err := http.Get(url)
-		catError(err)
+		catchError(err)
 
 		if response.StatusCode == 200 {
 			fmt.Println("Application on", url, "is UP and RUNING!!!!!")
-			status = true
-			writeFile("log.txt", url, status, err)
+			writeLog(url, response.StatusCode, err)
+
 		} else {
 			fmt.Println("ERROR on, ", url, "Something went Wrong!!!")
-			status = false
-			writeFile("log.txt", url, status, err)
+			writeLog(url, response.StatusCode, err)
+
 		}
 	}
 }
 
-func catError(err error) {
+func catchError(err error) {
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -121,7 +131,7 @@ func readFileReturnsArray(fileName string) []string {
 	var urls []string
 
 	file, err := os.Open(fileName)
-	catError(err)
+	catchError(err)
 
 	reader := bufio.NewReader(file)
 
@@ -142,16 +152,16 @@ func readFileReturnsArray(fileName string) []string {
 
 func readFile(fileName string) {
 	file, err := ioutil.ReadFile(fileName)
-	catError(err)
+	catchError(err)
 
 	fmt.Println(string(file))
 }
 
-func writeFile(fileName string, url string, status bool, err error) {
-	file, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	catError(err)
+func writeLog(url string, statusCode int, err error) {
+	file, err := os.OpenFile("log.txt", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	catchError(err)
 
-	file.WriteString("URL ==> " + url + ", active => " + strconv.FormatBool(status) + ", at => " + time.Now().Format("02/01/2006 15:04:05") + "\n")
+	file.WriteString("URL ==> " + url + ", statusCode => " + strconv.FormatInt(int64(statusCode), 10) + ", at => " + time.Now().Format("02/01/2006 15:04:05") + "\n")
 
 	file.Close()
 }
